@@ -25,8 +25,12 @@ jobs:
           java-version: "17"
           cache: maven
 
+      - name: Install verified official sherpa-onnx Java API
+        shell: pwsh
+        run: .\Install-SherpaJavaApi.ps1
+
       - name: Build Java app and test classes
-        run: mvn -B package -DskipTests
+        run: mvn -B "-Dmaven.repo.local=.m2repo" package -DskipTests
 
       - name: Run offline voice safety smokes
         shell: pwsh

@@ -65,12 +65,15 @@ Then build and test the Java app:
 
 ```powershell
 Set-Location .\ahakeyconfig-win-java
-mvn package -DskipTests
+.\Install-SherpaJavaApi.ps1
+mvn "-Dmaven.repo.local=.m2repo" package -DskipTests
 java -cp "target\classes;target\test-classes;target\lib\*" com.example.ahakey.service.QwenTranscriptNormalizerSmokeTest
 java -cp "target\classes;target\test-classes;target\lib\*" com.example.ahakey.service.QwenTextPolisherSmokeTest
 java -cp "target\classes;target\test-classes;target\lib\*" com.example.ahakey.service.TerminologyManagerSmokeTest
 .\build-laptop-package.ps1
 ```
+
+The bootstrap script downloads the official `sherpa-onnx` v1.13.3 Java API release and verifies its pinned SHA-256 before installing it into the project-local Maven repository. The packaging scripts invoke the same verification automatically.
 
 The versioned ZIP and SHA-256 sidecar are written to `ahakeyconfig-win-java\target\distribution\`.
 

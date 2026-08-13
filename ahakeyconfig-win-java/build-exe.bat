@@ -46,7 +46,13 @@ echo OK: Maven 已安装
 :: 编译项目
 echo.
 echo [3/5] 编译项目...
-mvn clean package -DskipTests
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-SherpaJavaApi.ps1"
+if errorlevel 1 (
+    echo ERROR: sherpa-onnx Java API setup failed
+    pause
+    exit /b 1
+)
+mvn -Dmaven.repo.local=.m2repo clean package -DskipTests
 if errorlevel 1 (
     echo ERROR: Maven 构建失败
     pause

@@ -33,6 +33,14 @@ Write-Status "==============================" Cyan
 
 # Build project (must run from script directory so Maven finds pom.xml)
 Set-Location $PSScriptRoot
+Write-Status "Preparing verified sherpa-onnx Java API..." Cyan
+try {
+    & (Join-Path $PSScriptRoot "Install-SherpaJavaApi.ps1")
+} catch {
+    Write-Status $_.Exception.Message Red
+    Write-Status "ERROR: sherpa-onnx Java API setup failed" Red
+    exit 1
+}
 Write-Status "Building project..." Cyan
 & mvn "-Dmaven.repo.local=.m2repo" package -DskipTests
 
