@@ -1,0 +1,253 @@
+# Arist AI Control 术语与专名库
+# 每行一个术语；# 开头的行为注释。用户文件会自动与新版内置词库取并集。
+
+# AI coding 工作方式
+vibe
+vibe coding
+agentic coding
+AI coding
+prompt engineering
+context engineering
+spec-driven development
+human in the loop
+
+# Agent 与 Codex 工作流
+agent
+subagent
+multi-agent
+orchestrator
+workflow
+automation
+task
+thread
+handoff
+memory
+skill
+plugin
+connector
+tool call
+computer use
+
+# AI 产品与模型
+OpenAI
+ChatGPT
+Codex
+Codex CLI
+Codex app
+Claude
+Claude Code
+Gemini
+Cursor
+NotebookLM
+OpenClaw
+Harness
+DeepSeek
+GLM
+Zhipu AI
+Anthropic
+Hugging Face
+OpenRouter
+Ollama
+vLLM
+LangChain
+LlamaIndex
+Cline
+OpenCode
+Roo Code
+GitHub Copilot
+Qwen
+Qwen3-ASR
+Qwen3-ASR-Flash
+DashScope
+百炼
+AhaKey
+Arist AI Control
+Typeless
+model routing
+function calling
+tool use
+embedding
+fine-tuning
+inference
+context window
+tokenizer
+eval
+guardrail
+fallback
+Cloudflare Workers
+Cloudflare Tunnel
+Tailscale Peer Relay
+
+# Git 与工程工作流
+Git
+GitHub
+repository
+repo
+branch
+commit
+push
+pull request
+PR
+merge
+rebase
+cherry-pick
+worktree
+diff
+patch
+code review
+issue
+GitHub Actions
+CI/CD
+
+# 软件开发与基础设施
+frontend
+backend
+full stack
+codebase
+runtime
+dependency
+package
+framework
+API
+SDK
+CLI
+MCP
+LLM
+RAG
+ASR
+JSON
+YAML
+Markdown
+environment variable
+API key
+endpoint
+localhost
+WebSocket
+OAuth
+streaming
+latency
+speech-to-text
+transcription
+clipboard
+keyboard shortcut
+copy
+paste
+Ctrl+C
+Ctrl+V
+Ctrl+X
+Ctrl+Z
+Ctrl+A
+Ctrl+S
+Ctrl+F
+
+# 语言、框架与平台
+JavaScript
+TypeScript
+Node.js
+npm
+pnpm
+React
+Next.js
+Vite
+Java
+JavaFX
+Python
+PowerShell
+FastAPI
+PostgreSQL
+MySQL
+SQLite
+Redis
+Docker
+Kubernetes
+Cloudflare
+Vercel
+Supabase
+Tailscale
+SSH
+RDP
+Windows
+OneDrive
+
+# Arist 产品与投资语境
+Arist
+Arist.ai
+Thesis
+investment thesis
+Key Driver
+Judgment
+Portfolio
+Trading Strategy
+PMF
+product-market fit
+retention
+onboarding
+dashboard
+roadmap
+prototype
+proof of concept
+PoC
+Alpha
+Beta
+Drawdown
+EBITDA
+
+# 金融应用开发与投资分析
+FinTech
+asset allocation
+portfolio management
+portfolio optimization
+risk management
+risk-adjusted return
+Sharpe ratio
+Sortino ratio
+information ratio
+volatility
+correlation
+covariance
+liquidity
+leverage
+exposure
+position sizing
+hedging
+benchmark
+equity
+fixed income
+yield curve
+duration
+convexity
+credit spread
+basis point
+bps
+cash flow
+free cash flow
+FCF
+discounted cash flow
+DCF
+net present value
+NPV
+internal rate of return
+IRR
+weighted average cost of capital
+WACC
+enterprise value
+market capitalization
+earnings per share
+EPS
+return on equity
+ROE
+return on invested capital
+ROIC
+CAGR
+EBIT
+gross margin
+operating margin
+net margin
+
+# CPIA 与光伏研究
+CPIA
+BloombergNEF
+BNEF
+photovoltaic
+polysilicon
+solar

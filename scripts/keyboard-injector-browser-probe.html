@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>AhaKey Browser Input Probe 507C</title>
+  <style>
+    body { font: 18px/1.5 system-ui, sans-serif; margin: 32px; }
+    textarea, [contenteditable] {
+      display: block; box-sizing: border-box; width: 100%; min-height: 150px;
+      margin-top: 16px; padding: 16px; border: 2px solid #666; border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <p id="label"></p>
+  <textarea id="textarea" aria-label="AhaKey textarea probe"></textarea>
+  <div id="editable" contenteditable="true" aria-label="AhaKey contenteditable probe"></div>
+  <script>
+    const expected = "\u7532\uFF0C\u4E59\u3002ChatGPT\uFF0CCodex\u3002AhaKey 507C \uD83D\uDE00";
+    const mode = new URLSearchParams(location.search).get("mode") === "editable"
+      ? "editable" : "textarea";
+    const textarea = document.getElementById("textarea");
+    const editable = document.getElementById("editable");
+    const target = mode === "editable" ? editable : textarea;
+    const other = mode === "editable" ? textarea : editable;
+    other.hidden = true;
+    document.getElementById("label").textContent = `AhaKey ${mode} isolated input probe`;
+    const value = () => mode === "editable" ? target.textContent : target.value;
+    const verify = () => {
+      const actual = value();
+      if (actual === expected) document.title = `PASS AhaKey Browser ${mode} Probe 507C`;
+      else if (actual.length) document.title = `FAIL AhaKey Browser ${mode} Probe 507C`;
+    };
+    target.addEventListener("input", verify);
+    window.addEventListener("load", () => target.focus());
+    const focusTimer = setInterval(() => {
+      if (!value().length) target.focus();
+      else clearInterval(focusTimer);
+    }, 100);
+  </script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+name: Windows Java CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-smoke:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ahakeyconfig-win-java
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Build Java app and test classes
+        run: mvn -B package -DskipTests
+
+      - name: Run offline voice safety smokes
+        shell: pwsh
+        run: |
+          $classpath = "target\classes;target\test-classes;target\lib\*"
+          java -cp $classpath com.example.ahakey.service.QwenTranscriptNormalizerSmokeTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          java -cp $classpath com.example.ahakey.service.QwenTextPolisherSmokeTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          java -cp $classpath com.example.ahakey.service.TerminologyManagerSmokeTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

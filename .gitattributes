@@ -1,0 +1,27 @@
+* text=auto
+
+*.java text eol=lf
+*.xml text eol=lf
+*.fxml text eol=lf
+*.css text eol=lf
+*.properties text eol=lf
+*.tsv text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+*.config text eol=crlf
+*.settings text eol=crlf
+*.resx text eol=crlf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.rdp text eol=crlf
+
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary

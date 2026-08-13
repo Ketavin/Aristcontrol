@@ -1,0 +1,55 @@
+# Arist AI Control 高置信度纠错规则
+# 格式：原文<Tab>替换文<Tab>置信度
+# 只做字面、不区分大小写的完整词匹配；低于 0.98 的规则不会自动执行。
+# 不要在这里放置可能改变原意的模糊同音规则。
+
+aha key	AhaKey	1.00
+arist ai control	Arist AI Control	1.00
+arist ai	Arist.ai	1.00
+chat gpt	ChatGPT	1.00
+open ai	OpenAI	1.00
+codex cli	Codex CLI	1.00
+codex app	Codex app	1.00
+claude code	Claude Code	1.00
+notebook lm	NotebookLM	1.00
+power shell	PowerShell	1.00
+git hub	GitHub	1.00
+git hub actions	GitHub Actions	1.00
+git lab	GitLab	1.00
+vs code	VS Code	1.00
+visual studio code	Visual Studio Code	1.00
+node js	Node.js	1.00
+next js	Next.js	1.00
+tailwind css	Tailwind CSS	1.00
+fast api	FastAPI	1.00
+postgre sql	PostgreSQL	1.00
+web socket	WebSocket	1.00
+one drive	OneDrive	1.00
+sub agent	subagent	1.00
+multi agent	multi-agent	1.00
+cherry pick	cherry-pick	1.00
+ci cd	CI/CD	1.00
+api key	API key	1.00
+speech to text	speech-to-text	1.00
+product market fit	product-market fit	1.00
+proof-of-concept	proof of concept	1.00
+qwen 3 asr	Qwen3-ASR	1.00
+qwen 3 asr flash	Qwen3-ASR-Flash	1.00
+qwen3 asr flash	Qwen3-ASR-Flash	1.00
+bloomberg nef	BloombergNEF	1.00
+key driver	Key Driver	1.00
+trading strategy	Trading Strategy	1.00
+web coding	vibe coding	1.00
+control c	Ctrl+C	1.00
+control plus c	Ctrl+C	1.00
+ctrl c	Ctrl+C	1.00
+ctrl plus c	Ctrl+C	1.00
+control v	Ctrl+V	1.00
+control plus v	Ctrl+V	1.00
+ctrl v	Ctrl+V	1.00
+ctrl plus v	Ctrl+V	1.00
+control x	Ctrl+X	1.00
+control z	Ctrl+Z	1.00
+control a	Ctrl+A	1.00
+control s	Ctrl+S	1.00
+control f	Ctrl+F	1.00
