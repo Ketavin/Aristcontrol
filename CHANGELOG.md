@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.1 — 2026-08-13
+
+Laptop upgrade release based on the verified 1.0 public source.
+
+- Preserves ASR-derived questions, exclamations, ellipses and chat boundaries through text polishing.
+- Allows at most one conservative, cue-backed final emoji in local WeChat chat mode.
+- Protects user terminology and personal names at runtime without bundling private names publicly.
+- Prioritizes user terminology in the ASR prompt and preserves local terminology, API Key and BLE pairing data during upgrade.
+- Bootstraps the official sherpa-onnx Java API with a pinned SHA-256 for reproducible clean builds.
+
 ## 1.0.0 — 2026-08-13
 
 First public Arist AI Control release for Windows.
