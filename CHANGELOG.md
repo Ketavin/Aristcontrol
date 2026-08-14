@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.3 — 2026-08-14
+
+Context-aware `cloud` to `Claude` recognition fix.
+
+- Corrects a standalone `cloud` utterance to `Claude` after ASR.
+- Corrects `cloud code`, `cloud fable`, `cloud opus`, `cloud sonnet` and `cloud haiku` model phrases.
+- Uses strong model and coding context to correct `cloud` inside longer dictation.
+- Preserves ordinary cloud-computing phrases including `cloud service`, `cloud storage`, `AI cloud service` and `Cloudflare Workers`.
+
 ## 1.0.2 — 2026-08-14
 
 Model-name recognition vocabulary update.

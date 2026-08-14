@@ -34,6 +34,20 @@ public final class TerminologyManager {
     private static final String DEFAULT_CORRECTIONS_RESOURCE = "/default-corrections.tsv";
     private static final int MAX_PROMPT_TERMS = 500;
     private static final int MAX_PROMPT_CHARACTERS = 6_000;
+    private static final int CASE_INSENSITIVE_UNICODE = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
+    private static final Pattern CLOUD_TOKEN_PATTERN = Pattern.compile(
+        "(?<![\\p{L}\\p{N}])cloud(?![\\p{L}\\p{N}])",
+        CASE_INSENSITIVE_UNICODE
+    );
+    private static final Pattern CLOUD_ONLY_UTTERANCE_PATTERN = Pattern.compile(
+        "^\\s*cloud\\s*[。！？!?….]*\\s*$",
+        CASE_INSENSITIVE_UNICODE
+    );
+    private static final Pattern CLAUDE_MODEL_CONTEXT_PATTERN = Pattern.compile(
+        "(?:\\b(?:fable|opus|sonnet|haiku|model|gpt|gemini|deepseek|qwen|glm|kimi|minimax)\\b"
+            + "|模型|大模型|写代码|改代码|编程)",
+        CASE_INSENSITIVE_UNICODE
+    );
 
     private final ModelConfig config;
     private final Path terminologyPath;
@@ -82,7 +96,7 @@ public final class TerminologyManager {
             return text;
         }
 
-        String corrected = text;
+        String corrected = applyContextualClaudeCorrection(text);
         for (CorrectionRule rule : loadCorrectionRulesSafely()) {
             Matcher matcher = rule.pattern().matcher(corrected);
             if (matcher.find()) {
@@ -90,6 +104,21 @@ public final class TerminologyManager {
                 logger.debug("应用高置信度纠错: {} -> {}", rule.source(), rule.replacement());
             }
         }
+        return corrected;
+    }
+
+    private String applyContextualClaudeCorrection(String text) {
+        Matcher cloudMatcher = CLOUD_TOKEN_PATTERN.matcher(text);
+        if (!cloudMatcher.find()) {
+            return text;
+        }
+        boolean standaloneUtterance = CLOUD_ONLY_UTTERANCE_PATTERN.matcher(text).matches();
+        boolean modelContext = CLAUDE_MODEL_CONTEXT_PATTERN.matcher(text).find();
+        if (!standaloneUtterance && !modelContext) {
+            return text;
+        }
+        String corrected = cloudMatcher.replaceAll("Claude");
+        logger.debug("应用 Claude 上下文纠错: cloud -> Claude");
         return corrected;
     }
 
@@ -354,7 +383,7 @@ public final class TerminologyManager {
         if (Character.isLetterOrDigit(lastCodePoint)) {
             pattern = pattern + "(?![\\p{L}\\p{N}])";
         }
-        return Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+        return Pattern.compile(pattern, CASE_INSENSITIVE_UNICODE);
     }
 
     private String stripBom(String value) {

@@ -11,6 +11,12 @@ open ai	OpenAI	1.00
 codex cli	Codex CLI	1.00
 codex app	Codex app	1.00
 claude code	Claude Code	1.00
+cloud code	Claude Code	1.00
+cloud fable	Claude Fable	1.00
+cloud fable 5	Claude Fable 5	1.00
+cloud opus	Claude Opus	1.00
+cloud sonnet	Claude Sonnet	1.00
+cloud haiku	Claude Haiku	1.00
 claude fable 5	Claude Fable 5	1.00
 fable 5	Fable 5	1.00
 claude opus 5	Claude Opus 5	1.00

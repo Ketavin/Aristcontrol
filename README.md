@@ -2,7 +2,7 @@
 
 Arist AI Control is the Windows companion for the Arist/AhaKey vibecoding controller. It connects to the controller over Bluetooth, manages keys, OLED content and light state, and turns the voice key into context-aware dictation for coding tools, work apps and WeChat.
 
-> Current release: **1.0.2** · Windows 10/11 x64
+> Current release: **1.0.3** · Windows 10/11 x64
 
 ## What it does
 
@@ -16,7 +16,7 @@ Arist AI Control is the Windows companion for the Arist/AhaKey vibecoding contro
 
 ## Install
 
-1. Download `Arist-AI-Control-v1.0.2-Windows-x64.zip` from [GitHub Releases](https://github.com/Ketavin/Aristcontrol/releases).
+1. Download `Arist-AI-Control-v1.0.3-Windows-x64.zip` from [GitHub Releases](https://github.com/Ketavin/Aristcontrol/releases).
 2. Extract the complete ZIP.
 3. Run `Install.cmd` as a normal Windows user, not as Administrator.
 4. On first install, enter a Bailian DashScope API Key when prompted.

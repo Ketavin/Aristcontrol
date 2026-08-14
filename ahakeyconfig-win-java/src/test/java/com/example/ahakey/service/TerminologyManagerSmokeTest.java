@@ -74,9 +74,33 @@ public final class TerminologyManagerSmokeTest {
             String input = "Use control c and control v for web coding in open ai with codex cli, qwen 3 asr flash, api key and speech to text.";
             String expected = "Use Ctrl+C and Ctrl+V for vibe coding in OpenAI with Codex CLI, Qwen3-ASR-Flash, API key and speech-to-text.";
             require(expected.equals(manager.applyHighConfidenceCorrections(input)), "canonical correction failed");
-            String modelInput = "Compare claude fable 5, gpt 5.6 sol, gemini 3.1 pro, deepseek v4 pro, qwen 3.7 plus, glm 5.1, kimi k3 and minimax m2.5.";
+            String modelInput = "Compare cloud fable 5, gpt 5.6 sol, gemini 3.1 pro, deepseek v4 pro, qwen 3.7 plus, glm 5.1, kimi k3 and minimax m2.5.";
             String modelExpected = "Compare Claude Fable 5, GPT-5.6 Sol, Gemini 3.1 Pro, DeepSeek-V4-Pro, Qwen3.7-Plus, GLM-5.1, Kimi K3 and MiniMax M2.5.";
             require(modelExpected.equals(manager.applyHighConfidenceCorrections(modelInput)), "model-name correction failed");
+            require("Claude".equals(manager.applyHighConfidenceCorrections("cloud")), "standalone Claude correction failed");
+            require("Claude。".equals(manager.applyHighConfidenceCorrections("cloud。")), "punctuated Claude correction failed");
+            require(
+                "我用 Claude 写代码。".equals(manager.applyHighConfidenceCorrections("我用 cloud 写代码。")),
+                "Claude coding-context correction failed"
+            );
+            require(
+                "切换到 Claude 模型。".equals(manager.applyHighConfidenceCorrections("切换到 cloud 模型。")),
+                "Claude model-context correction failed"
+            );
+            String ordinaryCloud = "Deploy to the cloud service and cloud storage.";
+            require(
+                ordinaryCloud.equals(manager.applyHighConfidenceCorrections(ordinaryCloud)),
+                "ordinary cloud-computing phrase was rewritten"
+            );
+            String aiCloud = "Build an AI cloud service.";
+            require(
+                aiCloud.equals(manager.applyHighConfidenceCorrections(aiCloud)),
+                "AI cloud service phrase was rewritten"
+            );
+            require(
+                "Use Cloudflare Workers.".equals(manager.applyHighConfidenceCorrections("Use Cloudflare Workers.")),
+                "Cloudflare boundary was rewritten"
+            );
             require(
                 "Existing Phrase".equals(manager.applyHighConfidenceCorrections("existing phrase")),
                 "existing user correction was not preserved"
@@ -87,12 +111,12 @@ public final class TerminologyManagerSmokeTest {
 
             Files.writeString(
                 corrections,
-                System.lineSeparator() + "cloud code\tClaude Code\t0.70" + System.lineSeparator(),
+                System.lineSeparator() + "clod code\tClaude Code\t0.70" + System.lineSeparator(),
                 StandardCharsets.UTF_8,
                 java.nio.file.StandardOpenOption.APPEND
             );
             require(
-                "cloud code".equals(manager.applyHighConfidenceCorrections("cloud code")),
+                "clod code".equals(manager.applyHighConfidenceCorrections("clod code")),
                 "low-confidence rule should not auto-apply"
             );
 
