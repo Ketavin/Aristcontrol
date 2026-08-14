@@ -42,6 +42,16 @@ public final class TerminologyManagerSmokeTest {
             String glossary = manager.buildPromptGlossary();
             require(glossary.contains("vibe coding"), "missing user-provided coding terminology");
             require(glossary.contains("Qwen3-ASR-Flash"), "missing model terminology");
+            require(glossary.contains("Claude Fable 5"), "missing Claude Fable model terminology");
+            require(glossary.contains("Fable"), "missing standalone Fable terminology");
+            require(glossary.contains("Claude Opus 5"), "missing Claude Opus model terminology");
+            require(glossary.contains("GPT-5.6 Sol"), "missing GPT model terminology");
+            require(glossary.contains("Gemini 3.6 Flash"), "missing Gemini model terminology");
+            require(glossary.contains("DeepSeek-V4-Pro"), "missing DeepSeek model terminology");
+            require(glossary.contains("Qwen3.7-Plus"), "missing Qwen model terminology");
+            require(glossary.contains("GLM-5.1"), "missing GLM model terminology");
+            require(glossary.contains("Kimi K3"), "missing Kimi model terminology");
+            require(glossary.contains("MiniMax M2.5"), "missing MiniMax model terminology");
             require(glossary.contains("BloombergNEF"), "missing research terminology");
             require(glossary.contains("Ctrl+C"), "missing copy shortcut terminology");
             require(glossary.contains("Ctrl+V"), "missing paste shortcut terminology");
@@ -64,6 +74,9 @@ public final class TerminologyManagerSmokeTest {
             String input = "Use control c and control v for web coding in open ai with codex cli, qwen 3 asr flash, api key and speech to text.";
             String expected = "Use Ctrl+C and Ctrl+V for vibe coding in OpenAI with Codex CLI, Qwen3-ASR-Flash, API key and speech-to-text.";
             require(expected.equals(manager.applyHighConfidenceCorrections(input)), "canonical correction failed");
+            String modelInput = "Compare claude fable 5, gpt 5.6 sol, gemini 3.1 pro, deepseek v4 pro, qwen 3.7 plus, glm 5.1, kimi k3 and minimax m2.5.";
+            String modelExpected = "Compare Claude Fable 5, GPT-5.6 Sol, Gemini 3.1 Pro, DeepSeek-V4-Pro, Qwen3.7-Plus, GLM-5.1, Kimi K3 and MiniMax M2.5.";
+            require(modelExpected.equals(manager.applyHighConfidenceCorrections(modelInput)), "model-name correction failed");
             require(
                 "Existing Phrase".equals(manager.applyHighConfidenceCorrections("existing phrase")),
                 "existing user correction was not preserved"

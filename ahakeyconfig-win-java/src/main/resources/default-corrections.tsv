@@ -11,6 +11,23 @@ open ai	OpenAI	1.00
 codex cli	Codex CLI	1.00
 codex app	Codex app	1.00
 claude code	Claude Code	1.00
+claude fable 5	Claude Fable 5	1.00
+fable 5	Fable 5	1.00
+claude opus 5	Claude Opus 5	1.00
+claude sonnet 5	Claude Sonnet 5	1.00
+gpt 5.6 sol	GPT-5.6 Sol	1.00
+gpt 5.6 terra	GPT-5.6 Terra	1.00
+gpt 5.6 luna	GPT-5.6 Luna	1.00
+gpt 5.3 codex	GPT-5.3-Codex	1.00
+gemini 3.6 flash	Gemini 3.6 Flash	1.00
+gemini 3.1 pro	Gemini 3.1 Pro	1.00
+deepseek v4 pro	DeepSeek-V4-Pro	1.00
+deepseek v4 flash	DeepSeek-V4-Flash	1.00
+qwen 3.7 plus	Qwen3.7-Plus	1.00
+qwen 3 coder next	Qwen3-Coder-Next	1.00
+glm 5.1	GLM-5.1	1.00
+kimi k3	Kimi K3	1.00
+minimax m2.5	MiniMax M2.5	1.00
 notebook lm	NotebookLM	1.00
 power shell	PowerShell	1.00
 git hub	GitHub	1.00

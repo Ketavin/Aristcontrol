@@ -36,19 +36,47 @@ Codex CLI
 Codex app
 Claude
 Claude Code
+Claude Fable
+Claude Fable 5
+Fable
+Fable 5
+Claude Opus
+Claude Opus 5
+Claude Opus 4.8
+Opus
+Claude Sonnet
+Claude Sonnet 5
+Claude Sonnet 4.6
+Sonnet
+Claude Haiku
+Claude Haiku 4.5
+Haiku
+Mythos
+Mythos 5
 Gemini
+Gemini 3.6 Flash
+Gemini 3.5 Flash
+Gemini 3.1 Pro
+Gemini 3 Flash
+Nano Banana 2
 Cursor
 NotebookLM
 OpenClaw
 Harness
 DeepSeek
+DeepSeek-V4
+DeepSeek-V4-Pro
+DeepSeek-V4-Flash
 GLM
+GLM-5.1
 Zhipu AI
 Anthropic
 Hugging Face
 OpenRouter
 Ollama
 vLLM
+Llama
+Mistral
 LangChain
 LlamaIndex
 Cline
@@ -56,8 +84,20 @@ OpenCode
 Roo Code
 GitHub Copilot
 Qwen
+Qwen3.7-Plus
+Qwen3.6-Flash
+Qwen3-Coder-Next
 Qwen3-ASR
 Qwen3-ASR-Flash
+GPT-5.6
+GPT-5.6 Sol
+GPT-5.6 Terra
+GPT-5.6 Luna
+GPT-5.5
+GPT-5.3-Codex
+Grok
+Kimi K3
+MiniMax M2.5
 DashScope
 百炼
 AhaKey

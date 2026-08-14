@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2 — 2026-08-14
+
+Model-name recognition vocabulary update.
+
+- Adds current Claude family names including Claude Fable 5, Claude Opus 5 and Claude Sonnet 5.
+- Adds common GPT, Gemini, DeepSeek, Qwen, GLM, Kimi and MiniMax model names.
+- Adds conservative full-model-name normalization without rewriting ambiguous ordinary words such as `cloud`.
+- Extends offline terminology smoke coverage to prove the new names reach the ASR glossary and normalize safely.
+
 ## 1.0.1 — 2026-08-13
 
 Laptop upgrade release based on the verified 1.0 public source.
