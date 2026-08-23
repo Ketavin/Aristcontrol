@@ -121,6 +121,9 @@ Tailscale Peer Relay
 # Git 与工程工作流
 Git
 GitHub
+远端 GitHub
+remote GitHub
+GitHub remote
 repository
 repo
 branch
@@ -212,6 +215,10 @@ OneDrive
 # Arist 产品与投资语境
 Arist
 Arist.ai
+P0
+P1
+DSH
+DeepSeek Harness
 Thesis
 investment thesis
 Key Driver

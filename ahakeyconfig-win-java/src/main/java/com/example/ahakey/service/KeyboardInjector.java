@@ -55,6 +55,14 @@ public class KeyboardInjector {
     private static final int MODIFIER_RELEASE_TIMEOUT_MS = 250;
     private static final int UNICODE_BATCH_CODE_UNITS = 128;
     private static final int PM_REMOVE = 0x0001;
+    // The old default retained an external IDataObject and called OleSetClipboard /
+    // OleFlushClipboard 1.5 seconds later. Windows 11 can terminate the process in
+    // ole32.dll when the source application changes during that lease. Keep the
+    // implementation available only as an explicit diagnostic opt-in; production
+    // injection uses KEYEVENTF_UNICODE and never borrows the system clipboard.
+    private static final boolean OLE_CLIPBOARD_INJECTION_ENABLED = Boolean.getBoolean(
+        "ahakey.injector.unsafeOleClipboard"
+    );
 
     private static final int KEYEVENTF_KEYUP = 0x0002;
     private static final int KEYEVENTF_UNICODE = 0x0004;
@@ -87,10 +95,13 @@ public class KeyboardInjector {
         staWorker = new StaWorker();
     }
 
-    /** Waits for the clipboard STA, OLE apartment and hidden owner window. */
-    public boolean awaitClipboardReady(long timeoutMillis) {
+    /** Waits for the serialized native-input worker. */
+    public boolean awaitInjectionReady(long timeoutMillis) {
         try {
             staWorker.initialized.get(Math.max(1, timeoutMillis), TimeUnit.MILLISECONDS);
+            if (!OLE_CLIPBOARD_INJECTION_ENABLED) {
+                return staWorker.running && !staWorker.closing && staWorker.thread.isAlive();
+            }
             WinDef.HWND owner = staWorker.ownerWindow;
             return staWorker.oleReady
                 && owner != null
@@ -102,6 +113,11 @@ public class KeyboardInjector {
             logger.error("KeyboardInjector - clipboard STA 未就绪: {}", e.getMessage());
             return false;
         }
+    }
+
+    /** Compatibility alias for older callers and probes. */
+    public boolean awaitClipboardReady(long timeoutMillis) {
+        return awaitInjectionReady(timeoutMillis);
     }
 
     public enum InjectionResult {
@@ -241,6 +257,14 @@ public class KeyboardInjector {
 
         if (!commitGate.commitIfCurrent(() -> { })) {
             return InjectionResult.CANCELLED;
+        }
+
+        if (!OLE_CLIPBOARD_INJECTION_ENABLED) {
+            logger.info(
+                "KeyboardInjector - method=unicode policy=clipboard-disabled title=\"{}\" pid={} exe={} class={}",
+                logSafe(target.title), target.pid, target.executable, target.windowClass
+            );
+            return injectUnicodeFallback(text, target, commitGate);
         }
 
         ClipboardPreparation preparation = beginClipboardLease(text, commitGate);
@@ -810,6 +834,10 @@ public class KeyboardInjector {
         return !clipboardWasPrepared || pasteEventsSent == 0;
     }
 
+    static boolean isOleClipboardInjectionEnabled() {
+        return OLE_CLIPBOARD_INJECTION_ENABLED;
+    }
+
     static OwnershipState classifyOwnership(
         int expectedSequence,
         int currentSequence,
@@ -1127,16 +1155,18 @@ public class KeyboardInjector {
 
         private void run() {
             try {
-                WinNT.HRESULT init = Ole32.INSTANCE.OleInitialize(Pointer.NULL);
-                oleReady = COMUtils.SUCCEEDED(init);
-                if (oleReady) {
-                    ownerWindow = user32.CreateWindowEx(
-                        0, "STATIC", "AhaKeyClipboardOwner", 0,
-                        0, 0, 0, 0, null, null, null, null
-                    );
-                } else {
-                    logger.error("KeyboardInjector - STA OleInitialize 失败: 0x{}",
-                        Long.toHexString(init.longValue()));
+                if (OLE_CLIPBOARD_INJECTION_ENABLED) {
+                    WinNT.HRESULT init = Ole32.INSTANCE.OleInitialize(Pointer.NULL);
+                    oleReady = COMUtils.SUCCEEDED(init);
+                    if (oleReady) {
+                        ownerWindow = user32.CreateWindowEx(
+                            0, "STATIC", "AhaKeyClipboardOwner", 0,
+                            0, 0, 0, 0, null, null, null, null
+                        );
+                    } else {
+                        logger.error("KeyboardInjector - STA OleInitialize 失败: 0x{}",
+                            Long.toHexString(init.longValue()));
+                    }
                 }
             } catch (RuntimeException e) {
                 logger.error("KeyboardInjector - STA 初始化失败: {}", e.getMessage(), e);

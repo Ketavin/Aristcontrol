@@ -20,6 +20,10 @@ public final class KeyboardInjectorPolicySmokeTest {
         require(KeyboardInjector.mayFallbackToUnicode(true, 0), "zero queued paste events must allow fallback");
         require(!KeyboardInjector.mayFallbackToUnicode(true, 1), "partial paste must never duplicate text");
         require(!KeyboardInjector.mayFallbackToUnicode(true, 4), "fully queued paste must never duplicate text");
+        require(
+            !KeyboardInjector.isOleClipboardInjectionEnabled(),
+            "unsafe delayed OLE clipboard restore must be disabled by default"
+        );
 
         KeyboardInjector.TargetSnapshot weixinAtRecord = target(
             "微信", 3388, "Weixin.exe", "Qt51514QWindowIcon",
