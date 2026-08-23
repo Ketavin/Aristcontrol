@@ -58,6 +58,12 @@ public final class TerminologyManagerSmokeTest {
             require(glossary.contains("OpenClaw"), "missing agent platform terminology");
             require(glossary.contains("Cloudflare Workers"), "missing infrastructure terminology");
             require(glossary.contains("Tailscale Peer Relay"), "missing remote-network terminology");
+            require(glossary.contains("远端 GitHub"), "missing remote GitHub terminology");
+            require(glossary.contains("P0"), "missing P0 development-stage terminology");
+            require(glossary.contains("P1"), "missing P1 development-stage terminology");
+            require(glossary.contains("DSH"), "missing DSH terminology");
+            require(glossary.contains("DeepSeek Harness"), "missing expanded DSH terminology");
+            require(glossary.contains("Arist"), "missing Arist terminology");
             require(glossary.contains("Sharpe ratio"), "missing finance terminology");
             require(glossary.contains("WACC"), "missing valuation terminology");
             require(glossary.contains("ROIC"), "missing investment terminology");
@@ -74,6 +80,18 @@ public final class TerminologyManagerSmokeTest {
             String input = "Use control c and control v for web coding in open ai with codex cli, qwen 3 asr flash, api key and speech to text.";
             String expected = "Use Ctrl+C and Ctrl+V for vibe coding in OpenAI with Codex CLI, Qwen3-ASR-Flash, API key and speech-to-text.";
             require(expected.equals(manager.applyHighConfidenceCorrections(input)), "canonical correction failed");
+            String developmentInput = "p 零、p一、d s h、deep seek harness、arist";
+            String developmentExpected = "P0、P1、DSH、DeepSeek Harness、Arist";
+            require(
+                developmentExpected.equals(manager.applyHighConfidenceCorrections(developmentInput)),
+                "development terminology correction failed"
+            );
+            String remoteGitInput = "远端 GitLab 现在出了问题，GitLab 服务本身正常。";
+            String remoteGitExpected = "远端 GitHub 现在出了问题，GitLab 服务本身正常。";
+            require(
+                remoteGitExpected.equals(manager.applyHighConfidenceCorrections(remoteGitInput)),
+                "remote GitHub contextual correction failed"
+            );
             String modelInput = "Compare cloud fable 5, gpt 5.6 sol, gemini 3.1 pro, deepseek v4 pro, qwen 3.7 plus, glm 5.1, kimi k3 and minimax m2.5.";
             String modelExpected = "Compare Claude Fable 5, GPT-5.6 Sol, Gemini 3.1 Pro, DeepSeek-V4-Pro, Qwen3.7-Plus, GLM-5.1, Kimi K3 and MiniMax M2.5.";
             require(modelExpected.equals(manager.applyHighConfidenceCorrections(modelInput)), "model-name correction failed");

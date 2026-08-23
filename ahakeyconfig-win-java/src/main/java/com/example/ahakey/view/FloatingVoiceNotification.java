@@ -159,7 +159,11 @@ public class FloatingVoiceNotification {
                 Color.web("#F5A623"),
                 true
             );
-            case "processing" -> new StatusConfig("处理中", Color.web("#F5A623"), true);
+            case "processing" -> new StatusConfig(
+                message != null && !message.isBlank() ? message : "处理中",
+                Color.web("#F5A623"),
+                true
+            );
             case "error" -> new StatusConfig(
                 message != null && !message.isBlank() ? message : "识别失败，请重试",
                 Color.web("#E74C3C"),

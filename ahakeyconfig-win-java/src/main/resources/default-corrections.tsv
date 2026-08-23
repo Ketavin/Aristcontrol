@@ -4,8 +4,20 @@
 # 不要在这里放置可能改变原意的模糊同音规则。
 
 aha key	AhaKey	1.00
+arist	Arist	1.00
 arist ai control	Arist AI Control	1.00
 arist ai	Arist.ai	1.00
+p 零	P0	1.00
+p零	P0	1.00
+p zero	P0	1.00
+p 0	P0	1.00
+p 一	P1	1.00
+p一	P1	1.00
+p one	P1	1.00
+p 1	P1	1.00
+d s h	DSH	1.00
+deep seek harness	DeepSeek Harness	1.00
+deepseek harness	DeepSeek Harness	1.00
 chat gpt	ChatGPT	1.00
 open ai	OpenAI	1.00
 codex cli	Codex CLI	1.00
@@ -38,6 +50,8 @@ notebook lm	NotebookLM	1.00
 power shell	PowerShell	1.00
 git hub	GitHub	1.00
 git hub actions	GitHub Actions	1.00
+远端 GitLab	远端 GitHub	1.00
+远端 git lab	远端 GitHub	1.00
 git lab	GitLab	1.00
 vs code	VS Code	1.00
 visual studio code	Visual Studio Code	1.00

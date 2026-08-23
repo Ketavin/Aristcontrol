@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -35,12 +36,31 @@ public final class QwenTextPolisher {
         WORK
     }
 
+    public enum Outcome {
+        FULL,
+        PARTIAL,
+        RULE_FALLBACK
+    }
+
+    public record PolishResult(
+        String text,
+        Mode mode,
+        Outcome outcome,
+        int acceptedSegments,
+        int totalSegments,
+        String reason
+    ) {
+        public int fallbackSegments() {
+            return Math.max(0, totalSegments - acceptedSegments);
+        }
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(QwenTextPolisher.class);
     private static final int MIN_POLISH_LENGTH = 7;
     private static final int MAX_INPUT_CHARS = 4_000;
-    private static final double MIN_LENGTH_RATIO = 0.55;
+    private static final double MIN_LENGTH_RATIO = 0.48;
     private static final double MAX_LENGTH_RATIO = 1.35;
-    private static final double MIN_CHARACTER_RETENTION = 0.60;
+    private static final double MIN_CHARACTER_RETENTION = 0.52;
     private static final double CHAT_MIN_LENGTH_RATIO = 0.72;
     private static final double CHAT_MIN_CHARACTER_RETENTION = 0.72;
     private static final String ASCII_ELLIPSIS_MARKER = "\uE000";
@@ -75,6 +95,16 @@ public final class QwenTextPolisher {
     );
     private static final Pattern WORK_LEADING_HESITATION = Pattern.compile(
         "(^|[，。！？；\\n])\\s*(?:嗯|呃|额)(?:[，、\\s]+)",
+        Pattern.MULTILINE
+    );
+    private static final Pattern WORK_TRIPLE_STUTTER = Pattern.compile(
+        "([\\p{IsHan}&&[^哈呵嘿嘻啦啊哦嗯呃]])\\1{2,}"
+    );
+    private static final Pattern WORK_REPEATED_NOUN = Pattern.compile(
+        "(进程|状态|模式|问题|记录|窗口|应用|软件|会话|代码|文件|数据|逻辑)(?:[，、\\s]*\\1)+"
+    );
+    private static final Pattern WORK_DUPLICATE_CLAUSE = Pattern.compile(
+        "(^|[。！？；\\n])([^，。！？；\\n]{3,30})[，、]\\s*\\2(?=([，。！？；\\n]|$))",
         Pattern.MULTILINE
     );
     private static final Pattern REPEATED_PUNCTUATION = Pattern.compile("([，。！？；、,.!?;])\\1+");
@@ -142,17 +172,21 @@ public final class QwenTextPolisher {
     }
 
     public String polishOrOriginal(String text, Mode mode) {
-        if (text == null || text.isBlank()) {
-            return text;
-        }
+        return polishWithResult(text, mode).text();
+    }
+
+    public PolishResult polishWithResult(String text, Mode mode) {
         Mode selectedMode = mode == null ? Mode.WORK : mode;
+        if (text == null || text.isBlank()) {
+            return fallbackResult(text, selectedMode, 0, "empty");
+        }
         String cleaned = deterministicCleanup(text, selectedMode);
         if (cleaned.length() < MIN_POLISH_LENGTH || cleaned.length() > MAX_INPUT_CHARS) {
-            return cleaned;
+            return fallbackResult(cleaned, selectedMode, 0, "length-bypass");
         }
         List<TextSegment> segments = segmentText(cleaned, selectedMode);
         if (segments.isEmpty()) {
-            return cleaned;
+            return fallbackResult(cleaned, selectedMode, 0, "no-segments");
         }
         List<String> protectedTerms = terminologyManager.findTermsInText(cleaned);
 
@@ -166,10 +200,10 @@ public final class QwenTextPolisher {
             apiKey = new String(keyChars);
 
             HttpRequest request = buildRequest(cleaned, segments, apiKey, selectedMode);
-            ApiResponse response = transport.send(request);
+            ApiResponse response = sendWithTransientRetry(request);
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 logger.warn("Qwen 文本精修返回 HTTP {}，使用规则清理结果", response.statusCode());
-                return cleaned;
+                return fallbackResult(cleaned, selectedMode, segments.size(), "http-" + response.statusCode());
             }
 
             String content = extractContent(response.body());
@@ -202,20 +236,58 @@ public final class QwenTextPolisher {
                 selectedMode, text.length(), cleaned.length(), result.length(), segments.size(), accepted,
                 segments.size() - accepted, rejectionReasons
             );
-            return result;
+            Outcome outcome = accepted == segments.size()
+                ? Outcome.FULL
+                : (accepted > 0 ? Outcome.PARTIAL : Outcome.RULE_FALLBACK);
+            return new PolishResult(
+                result,
+                selectedMode,
+                outcome,
+                accepted,
+                segments.size(),
+                rejectionReasons.isEmpty() ? "accepted" : rejectionReasons.toString()
+            );
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("Qwen 文本精修被中断，使用规则清理结果");
-            return cleaned;
+            return fallbackResult(cleaned, selectedMode, segments.size(), "interrupted");
         } catch (Exception e) {
             logger.warn("Qwen 文本精修失败，使用规则清理结果: {}", oneLine(e.getMessage()));
-            return cleaned;
+            return fallbackResult(cleaned, selectedMode, segments.size(), oneLine(e.getMessage()));
         } finally {
             if (keyChars != null) {
                 Arrays.fill(keyChars, '\0');
             }
             apiKey = null;
         }
+    }
+
+    private PolishResult fallbackResult(String text, Mode mode, int totalSegments, String reason) {
+        return new PolishResult(text, mode, Outcome.RULE_FALLBACK, 0, totalSegments, reason);
+    }
+
+    private ApiResponse sendWithTransientRetry(HttpRequest request) throws IOException, InterruptedException {
+        try {
+            return transport.send(request);
+        } catch (IOException first) {
+            if (!isTransientTransportFailure(first)) {
+                throw first;
+            }
+            logger.warn("Qwen 文本精修临时连接失败，执行一次快速重试: {}", oneLine(first.getMessage()));
+            Thread.sleep(120);
+            return transport.send(request);
+        }
+    }
+
+    private static boolean isTransientTransportFailure(IOException error) {
+        if (error instanceof HttpConnectTimeoutException) {
+            return true;
+        }
+        String message = error.getMessage() == null ? "" : error.getMessage().toLowerCase(Locale.ROOT);
+        return message.contains("connect timed out")
+            || message.contains("connection reset")
+            || message.contains("eof reached")
+            || message.contains("unexpected end of stream");
     }
 
     private HttpRequest buildRequest(
@@ -332,6 +404,13 @@ public final class QwenTextPolisher {
         value = REPEATED_FILLER.matcher(value).replaceAll("$1");
         if (mode == Mode.WORK) {
             value = WORK_LEADING_HESITATION.matcher(value).replaceAll("$1");
+            value = WORK_TRIPLE_STUTTER.matcher(value).replaceAll("$1");
+            value = WORK_REPEATED_NOUN.matcher(value).replaceAll("$1");
+            String collapsed;
+            do {
+                collapsed = value;
+                value = WORK_DUPLICATE_CLAUSE.matcher(value).replaceAll("$1$2");
+            } while (!value.equals(collapsed));
         }
         value = value.replaceAll("[\\t ]+", " ");
         value = value.replaceAll("\\s+([，。！？；、])", "$1");
@@ -381,7 +460,9 @@ public final class QwenTextPolisher {
                     current.append(text.charAt(++i));
                 }
             }
-            boolean workClauseBoundary = mode == Mode.WORK && ch == '，' && current.length() >= 24;
+            // Keep ordinary WORK clauses together. Splitting every long comma clause made
+            // restart phrases and semantic repetition impossible for the model to remove.
+            boolean workClauseBoundary = mode == Mode.WORK && ch == '，' && current.length() >= 96;
             if (strongBoundary || workClauseBoundary) {
                 String segment = current.toString().trim();
                 int separatorEnd = i + 1;
@@ -966,7 +1047,7 @@ public final class QwenTextPolisher {
 
     private static Transport defaultTransport() {
         HttpClient client = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(4))
+            .connectTimeout(Duration.ofMillis(2_500))
             .build();
         return request -> {
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());

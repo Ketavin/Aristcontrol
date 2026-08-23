@@ -285,6 +285,7 @@ public class VoiceInputManager {
 
         notifyStatus(VoiceStatus.PROCESSING);
 
+        String completionMessage = "语音就绪";
         if (text != null && !text.trim().isEmpty()) {
             // 添加标点符号
             String punctuatedText = speechService.addPunctuation(text.trim());
@@ -294,7 +295,9 @@ public class VoiceInputManager {
             synchronized (sessionStateLock) {
                 polishTarget = activeTargetSnapshot;
             }
-            String processedText = processWithAhaType(punctuatedText, polishTarget);
+            ProcessedText processed = processWithAhaType(punctuatedText, polishTarget);
+            String processedText = processed.text();
+            completionMessage = processed.completionMessage();
             logger.debug("准备注入文本: {}", processedText);
 
             if (!isCurrentSession(sessionId)) {
@@ -333,7 +336,7 @@ public class VoiceInputManager {
             this.partialCallback = null;
             this.activeTargetSnapshot = null;
         }
-        notifyStatus(VoiceStatus.STOPPED);
+        notifyStatus(VoiceStatus.STOPPED, completionMessage);
     }
 
     private void onRecognitionError(long sessionId, String message) {
@@ -360,13 +363,13 @@ public class VoiceInputManager {
     /**
      * 使用 AhaType 整理文本
      */
-    private String processWithAhaType(
+    private ProcessedText processWithAhaType(
         String text,
         KeyboardInjector.TargetSnapshot target
     ) {
         String normalized = QwenSpeechService.normalizeTranscript(text);
         if (!textPolishingEnabled || textPolisher == null) {
-            return normalized;
+            return new ProcessedText(normalized, "智能精修未启用");
         }
         QwenTextPolisher.Mode mode = selectPolishMode(target);
         notifyStatus(
@@ -374,9 +377,34 @@ public class VoiceInputManager {
             mode == QwenTextPolisher.Mode.CHAT ? "微信聊天保真精修中" : "工作语言精修中"
         );
         logger.info("文本整理模式: {} target={}", mode, target == null ? "unknown" : target.executable());
-        String polished = textPolisher.polishOrOriginal(normalized, mode);
+        QwenTextPolisher.PolishResult result = textPolisher.polishWithResult(normalized, mode);
+        String modeLabel = mode == QwenTextPolisher.Mode.CHAT ? "聊天" : "工作";
+        String completionMessage;
+        if (result.outcome() == QwenTextPolisher.Outcome.FULL) {
+            completionMessage = String.format(
+                "%s精修成功（%d/%d）", modeLabel, result.acceptedSegments(), result.totalSegments()
+            );
+        } else if (result.outcome() == QwenTextPolisher.Outcome.PARTIAL) {
+            completionMessage = String.format(
+                "%s精修部分回退（%d/%d）", modeLabel, result.acceptedSegments(), result.totalSegments()
+            );
+        } else if ("length-bypass".equals(result.reason()) || "no-segments".equals(result.reason())) {
+            completionMessage = modeLabel + "规则清理完成";
+        } else {
+            completionMessage = modeLabel + "精修失败，已规则清理";
+        }
+        logger.info(
+            "文本整理结果: mode={} outcome={} accepted={}/{} reason={}",
+            mode, result.outcome(), result.acceptedSegments(), result.totalSegments(), result.reason()
+        );
         // 最终注入边界再做一次确定性清理，防止整理模型重新带入重复标点。
-        return QwenSpeechService.normalizeTranscript(polished);
+        return new ProcessedText(
+            QwenSpeechService.normalizeTranscript(result.text()),
+            completionMessage
+        );
+    }
+
+    private record ProcessedText(String text, String completionMessage) {
     }
 
     static QwenTextPolisher.Mode selectPolishMode(KeyboardInjector.TargetSnapshot target) {
@@ -503,6 +531,6 @@ public class VoiceInputManager {
     }
 
     public boolean awaitTextInjectionReady(long timeoutMillis) {
-        return keyboardInjector != null && keyboardInjector.awaitClipboardReady(timeoutMillis);
+        return keyboardInjector != null && keyboardInjector.awaitInjectionReady(timeoutMillis);
     }
 }

@@ -288,12 +288,9 @@ public class App extends Application {
             }
         });
 
-        // 11. 设置窗口最小化时隐藏到托盘
-        primaryStage.iconifiedProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal && trayIcon != null) {
-                minimizeToTray();
-            }
-        });
+        // Windows/RDP may emit an iconify transition while switching desktops or
+        // full-screen applications. Keep ordinary minimization in the taskbar;
+        // only an explicit close request hides the app to the tray.
 
         logger.info("STARTUP_READY minimized={} tray={} ble_supervisor=true",
             startMinimized && trayIcon != null, trayIcon != null);

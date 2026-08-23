@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.5 — 2026-08-23
+
+Windows stability, text-polish transparency and development vocabulary update.
+
+- Stops ordinary minimize/RDP desktop transitions from automatically hiding the app to the tray.
+- Disables the delayed OLE clipboard lease by default to avoid native Windows termination when the source application changes; production injection uses serialized Unicode input with the existing focus guard.
+- Removes safe WORK-mode stutters, repeated nouns and exact duplicate clauses while keeping CHAT cleanup conservative.
+- Reports full, partial and fallback polish outcomes in the UI and retries one transient network failure.
+- Adds P0, P1, DSH, DeepSeek Harness, Arist and remote GitHub terminology with narrowly scoped corrections.
+
 ## 1.0.3 — 2026-08-14
 
 Context-aware `cloud` to `Claude` recognition fix.

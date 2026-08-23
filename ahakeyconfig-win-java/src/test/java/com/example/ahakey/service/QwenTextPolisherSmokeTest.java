@@ -2,10 +2,12 @@ package com.example.ahakey.service;
 
 import com.example.ahakey.config.ModelConfig;
 
+import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Standalone, no-network smoke test for the fail-open Qwen text polish pass. */
 public final class QwenTextPolisherSmokeTest {
@@ -22,16 +24,18 @@ public final class QwenTextPolisherSmokeTest {
         rejectsChatRewritesThatFlattenTone();
         acceptsCollapsedRepeatedChatFillers();
         appliesDeterministicCleanupBeforeFallback();
+        removesSafeWorkStuttersAndExactDuplicateClauses();
         preservesEllipsesAcrossPolishCleanup();
         acceptsOnlyCueBackedChatPunctuation();
         acceptsOnlyConservativeChatEmoji();
         keepsNewEmojiAtWholeMessageEndOnly();
         keepsMixedTerminalClusterAtomic();
         preservesSegmentBoundariesAndAsrProsody();
-        preservesWorkCommaSegmentBoundaries();
+        keepsOrdinaryWorkClausesTogether();
         preservesInternalExpressiveBoundaries();
         preservesProtectedPersonalNames();
         keepsSafeSegmentsWhenAnotherSegmentIsRejected();
+        reportsTruthfulOutcomeAndRetriesTransientFailure();
         selectsModeFromTargetApplication();
         System.out.println("Qwen text polisher smoke test passed");
     }
@@ -145,6 +149,19 @@ public final class QwenTextPolisherSmokeTest {
         String work = QwenTextPolisher.deterministicCleanup(original, QwenTextPolisher.Mode.WORK);
         require("嗯，这个方案可以。".equals(chat), "Chat deterministic cleanup was incorrect: " + chat);
         require("这个方案可以。".equals(work), "Work deterministic cleanup was incorrect: " + work);
+    }
+
+    private static void removesSafeWorkStuttersAndExactDuplicateClauses() {
+        String original = "要要要显示进程进程。这个问题，这个问题。";
+        String cleaned = QwenTextPolisher.deterministicCleanup(original, QwenTextPolisher.Mode.WORK);
+        require(
+            "要显示进程。这个问题。".equals(cleaned),
+            "WORK safe stutter cleanup was incomplete: " + cleaned
+        );
+        require(
+            original.equals(QwenTextPolisher.deterministicCleanup(original, QwenTextPolisher.Mode.CHAT)),
+            "CHAT cleanup became too aggressive"
+        );
     }
 
     private static void preservesEllipsesAcrossPolishCleanup() {
@@ -345,15 +362,11 @@ public final class QwenTextPolisherSmokeTest {
         );
     }
 
-    private static void preservesWorkCommaSegmentBoundaries() {
+    private static void keepsOrdinaryWorkClausesTogether() {
         String original = "这是一个足够长的工作场景语音片段，需要先把背景和限制条件完整说明清楚，然后再给出结论。";
-        String response = "{\"segments\":["
-            + "{\"id\":1,\"text\":\"这是一个足够长的工作场景语音片段，需要先把背景和限制条件完整说明清楚\"},"
-            + "{\"id\":2,\"text\":\"然后再给出结论。\"}]}";
-        QwenTextPolisher droppedComma = polisherReturning(200, response, null);
         require(
-            original.equals(droppedComma.polishOrOriginal(original, QwenTextPolisher.Mode.WORK)),
-            "A WORK comma segment boundary was dropped"
+            QwenTextPolisher.segmentText(original, QwenTextPolisher.Mode.WORK).size() == 1,
+            "Ordinary WORK clauses were split before restart/redundancy cleanup"
         );
     }
 
@@ -436,6 +449,38 @@ public final class QwenTextPolisherSmokeTest {
             "这个方案可行。第二段没有问题。".equals(actual),
             "Safe segment was not kept with local fallback: " + actual
         );
+    }
+
+    private static void reportsTruthfulOutcomeAndRetriesTransientFailure() {
+        String original = "嗯嗯，这个这个方案可以。第二段没有问题。";
+        String response = "{\"segments\":["
+            + "{\"id\":1,\"text\":\"这个方案可行。\"},"
+            + "{\"id\":2,\"text\":\"第二段存在问题。\"}]}";
+        QwenTextPolisher.PolishResult partial = polisherReturning(200, response, null)
+            .polishWithResult(original, QwenTextPolisher.Mode.WORK);
+        require(partial.outcome() == QwenTextPolisher.Outcome.PARTIAL, "Partial fallback was not reported");
+        require(partial.acceptedSegments() == 1 && partial.totalSegments() == 2, "Partial counts were wrong");
+
+        QwenTextPolisher.PolishResult failed = polisherReturning(429, "rate limited", null)
+            .polishWithResult(original, QwenTextPolisher.Mode.WORK);
+        require(failed.outcome() == QwenTextPolisher.Outcome.RULE_FALLBACK, "HTTP fallback was not reported");
+
+        AtomicInteger attempts = new AtomicInteger();
+        QwenTextPolisher.Transport flaky = request -> {
+            if (attempts.incrementAndGet() == 1) {
+                throw new IOException("HTTP connect timed out");
+            }
+            String body = "{\"choices\":[{\"message\":{\"content\":\"这个方案可以。\"}}]}";
+            return new QwenTextPolisher.ApiResponse(200, body.getBytes(StandardCharsets.UTF_8));
+        };
+        QwenTextPolisher retried = new QwenTextPolisher(
+            ModelConfig.getInstance(), flaky, () -> "sk-test-key".toCharArray()
+        );
+        QwenTextPolisher.PolishResult retryResult = retried.polishWithResult(
+            "嗯嗯，这个这个方案可以。", QwenTextPolisher.Mode.WORK
+        );
+        require(attempts.get() == 2, "Transient failure was not retried exactly once");
+        require(retryResult.outcome() == QwenTextPolisher.Outcome.FULL, "Retry result was not accepted");
     }
 
     private static void selectsModeFromTargetApplication() {

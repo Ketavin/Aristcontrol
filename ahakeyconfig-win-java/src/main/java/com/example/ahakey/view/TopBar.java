@@ -757,7 +757,7 @@ public class TopBar extends VBox {
             voiceRunning = false;
             updateVoiceButtonState();
             setVoiceStatus("error", "文本注入服务初始化失败");
-            logger.error("VOICE_STARTUP_FAILED: clipboard STA did not become ready");
+            logger.error("VOICE_STARTUP_FAILED: native text-injection worker did not become ready");
             return;
         }
 
@@ -807,7 +807,7 @@ public class TopBar extends VBox {
             logger.error("VOICE_STARTUP_FAILED: low-level hook did not become ready");
             return;
         }
-        logger.info("VOICE_INPUT_READY provider={} hook=true clipboard=true",
+        logger.info("VOICE_INPUT_READY provider={} hook=true injection=true",
             voiceInputManager.getSpeechService().getProviderDisplayName());
     }
 
@@ -862,6 +862,15 @@ public class TopBar extends VBox {
                 case "ready" -> "#2ECC71";                     // 就绪 - 绿色
                 default -> "#E74C3C"; // error
             };
+            if (("stopped".equals(status) || "idle".equals(status)) && text != null) {
+                if (text.contains("失败")) {
+                    color = "#E74C3C";
+                } else if (text.contains("回退")) {
+                    color = "#F5A623";
+                } else if (text.contains("成功") || text.contains("完成")) {
+                    color = "#2ECC71";
+                }
+            }
             voiceStatusLabel.setStyle("-fx-text-fill: " + color + ";");
         }
     }
