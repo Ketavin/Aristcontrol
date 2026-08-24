@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.6 — 2026-08-24
+
+WeChat exact-once punctuation and natural chat-polish hotfix.
+
+- Sends one owned `CF_UNICODETEXT` payload and one `Ctrl+V` to local Weixin/WeChat Qt editors, preventing duplicated Chinese commas and periods.
+- Keeps the unsafe delayed OLE clipboard restoration disabled, avoiding the prior `ole32.dll` app-switch crash path.
+- Restores contextual word correction, light tone refinement and prosody-aware punctuation in `CHAT` mode without turning messages into formal prose.
+- Keeps ordinary applications on the serialized Unicode injection path and fails closed rather than replaying text after an uncertain paste.
+
 ## 1.0.5 — 2026-08-23
 
 Windows stability, text-polish transparency and development vocabulary update.

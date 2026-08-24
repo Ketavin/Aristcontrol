@@ -143,6 +143,12 @@ public class KeyboardInjector {
         CARET_POSITION_CHANGED
     }
 
+    enum InjectionRoute {
+        OWNED_CLIPBOARD,
+        UNICODE,
+        UNSAFE_OLE_CLIPBOARD
+    }
+
     /**
      * Foreground input context captured before the recording HUD is shown.
      * Native child focus/caret handles let us reject most same-window focus
@@ -259,7 +265,11 @@ public class KeyboardInjector {
             return InjectionResult.CANCELLED;
         }
 
-        if (!OLE_CLIPBOARD_INJECTION_ENABLED) {
+        InjectionRoute route = selectInjectionRoute(target);
+        if (route == InjectionRoute.OWNED_CLIPBOARD) {
+            return injectOwnedClipboardPaste(text, target, commitGate);
+        }
+        if (route == InjectionRoute.UNICODE) {
             logger.info(
                 "KeyboardInjector - method=unicode policy=clipboard-disabled title=\"{}\" pid={} exe={} class={}",
                 logSafe(target.title), target.pid, target.executable, target.windowClass
@@ -386,6 +396,15 @@ public class KeyboardInjector {
         boolean weixinExecutable = "Weixin.exe".equalsIgnoreCase(target.executable)
             || "WeChat.exe".equalsIgnoreCase(target.executable);
         return weixinExecutable && target.windowClass.regionMatches(true, 0, "Qt", 0, 2);
+    }
+
+    static InjectionRoute selectInjectionRoute(TargetSnapshot target) {
+        if (OLE_CLIPBOARD_INJECTION_ENABLED) {
+            return InjectionRoute.UNSAFE_OLE_CLIPBOARD;
+        }
+        return isWeixinQtTarget(target)
+            ? InjectionRoute.OWNED_CLIPBOARD
+            : InjectionRoute.UNICODE;
     }
 
     private void loggerTargetMismatch(String message, TargetMatch mismatch, TargetSnapshot expected) {
@@ -570,6 +589,77 @@ public class KeyboardInjector {
             releaseOriginal(original);
             return ClipboardPreparation.fallback();
         }
+    }
+
+    /**
+     * Weixin's Qt editor can duplicate Chinese punctuation when each UTF-16 code
+     * unit is delivered through KEYEVENTF_UNICODE. Publish one owned
+     * CF_UNICODETEXT payload and enqueue one Ctrl+V instead.
+     *
+     * This deliberately does not retain or restore an external IDataObject. The
+     * old delayed OLE restoration could outlive the source application and crash
+     * in ole32.dll while the user switched windows. The injected text remains on
+     * the clipboard, which is deterministic and keeps this path free of deferred
+     * native lifetime work.
+     */
+    private InjectionResult injectOwnedClipboardPaste(
+        String text,
+        TargetSnapshot target,
+        CommitGate commitGate
+    ) {
+        int tokenFormat = clipboardUser32.RegisterClipboardFormat(TOKEN_FORMAT_NAME);
+        if (tokenFormat == 0) {
+            logger.error("KeyboardInjector - 微信原子粘贴无法注册剪贴板所有权格式，停止注入");
+            return InjectionResult.FAILED;
+        }
+
+        int originalSequence = clipboardUser32.GetClipboardSequenceNumber();
+        String token = UUID.randomUUID().toString();
+        TemporaryWrite[] writeHolder = new TemporaryWrite[1];
+        if (!commitGate.commitIfCurrent(() -> writeHolder[0] = writeTemporaryClipboard(
+            null, text, token, tokenFormat, originalSequence
+        ))) {
+            return InjectionResult.CANCELLED;
+        }
+
+        TemporaryWrite write = writeHolder[0];
+        if (write == null || write.outcome != ClipboardWriteOutcome.SUCCESS) {
+            logger.error(
+                "KeyboardInjector - 微信原子剪贴板写入失败: outcome={}; 为避免重复标点，不回退逐字符 Unicode",
+                write == null ? "UNKNOWN" : write.outcome
+            );
+            return InjectionResult.FAILED;
+        }
+
+        TargetMatch prePasteMatch = matchForegroundTarget(target, true);
+        if (prePasteMatch != TargetMatch.MATCH) {
+            loggerTargetMismatch("微信原子粘贴前目标已变化，取消 Ctrl+V", prePasteMatch, target);
+            return InjectionResult.CANCELLED;
+        }
+
+        int[] sentHolder = new int[1];
+        if (!commitGate.commitIfCurrent(() -> sentHolder[0] = sendPasteShortcut())) {
+            return InjectionResult.CANCELLED;
+        }
+
+        int expected = 4;
+        int sent = sentHolder[0];
+        if (sent == 0) {
+            logger.error("KeyboardInjector - 微信原子粘贴 Ctrl+V 未入队；为避免重复标点，不回退 Unicode");
+            return InjectionResult.FAILED;
+        }
+        if (sent < expected) {
+            releasePasteModifiers();
+            logger.error("KeyboardInjector - 微信原子粘贴 Ctrl+V 部分入队: sent={}/{}", sent, expected);
+            return InjectionResult.PARTIAL_UNKNOWN;
+        }
+
+        logger.info(
+            "KeyboardInjector - method=clipboard policy=weixin-owned-atomic events={}/{} restore=not-scheduled "
+                + "title=\"{}\" pid={} exe={} class={}",
+            sent, expected, logSafe(target.title), target.pid, target.executable, target.windowClass
+        );
+        return InjectionResult.CLIPBOARD_ENQUEUED;
     }
 
     private TemporaryWrite writeTemporaryClipboard(
