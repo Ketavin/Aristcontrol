@@ -21,6 +21,7 @@ public final class QwenTextPolisherSmokeTest {
         failsOpenOnEmptyOrHttpError();
         validatesProtectedContentWithoutNetwork();
         selectsChatAndWorkPrompts();
+        acceptsNaturalChatWordAndTonePolish();
         rejectsChatRewritesThatFlattenTone();
         acceptsCollapsedRepeatedChatFillers();
         appliesDeterministicCleanupBeforeFallback();
@@ -117,8 +118,19 @@ public final class QwenTextPolisherSmokeTest {
         work.polishOrOriginal(original, QwenTextPolisher.Mode.WORK);
 
         require(readBody(chatRequest.get()).contains("微信聊天语音转写"), "Chat prompt was not selected");
+        require(readBody(chatRequest.get()).contains("同音误识别"), "Chat prompt lost contextual word correction");
+        require(readBody(chatRequest.get()).contains("语气词位置"), "Chat prompt lost natural tone polishing");
         require(!readBody(workRequest.get()).contains("微信聊天语音转写"), "Work prompt used chat instructions");
         require(readBody(workRequest.get()).contains("segments"), "Structured segments were not requested");
+    }
+
+    private static void acceptsNaturalChatWordAndTonePolish() {
+        String original = "这个方案是不是挺号的。";
+        String polished = "这个方案是不是挺好的？";
+        require(
+            QwenTextPolisher.isSafeRewrite(original, polished, QwenTextPolisher.Mode.CHAT),
+            "Chat mode rejected a safe word correction plus tone-backed punctuation polish"
+        );
     }
 
     private static void rejectsChatRewritesThatFlattenTone() {

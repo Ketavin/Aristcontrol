@@ -41,3 +41,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           java -cp $classpath com.example.ahakey.service.TerminologyManagerSmokeTest
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          java -cp $classpath com.example.ahakey.service.KeyboardInjectorPolicySmokeTest
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

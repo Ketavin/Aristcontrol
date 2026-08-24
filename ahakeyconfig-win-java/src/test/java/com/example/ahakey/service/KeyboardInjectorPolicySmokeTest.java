@@ -34,6 +34,11 @@ public final class KeyboardInjectorPolicySmokeTest {
             0x100, 0x100, 0, 0, 0, 0, 0
         );
         require(
+            KeyboardInjector.selectInjectionRoute(weixinAtRecord)
+                == KeyboardInjector.InjectionRoute.OWNED_CLIPBOARD,
+            "Weixin Qt must use one atomic clipboard paste to avoid duplicated punctuation"
+        );
+        require(
             KeyboardInjector.compareTargetSnapshots(weixinAtRecord, weixinAfterHud, true)
                 == KeyboardInjector.TargetMatch.MATCH,
             "same Weixin Qt main window must tolerate unstable child focus/caret metadata"
@@ -57,6 +62,11 @@ public final class KeyboardInjectorPolicySmokeTest {
 
         KeyboardInjector.TargetSnapshot ordinaryEditor = target(
             "Editor", 77, "editor.exe", "EditWindow", 0x300, 0x310, 0x320, 1, 2, 3, 4
+        );
+        require(
+            KeyboardInjector.selectInjectionRoute(ordinaryEditor)
+                == KeyboardInjector.InjectionRoute.UNICODE,
+            "ordinary editors must keep the clipboard-free Unicode route"
         );
         require(
             KeyboardInjector.compareTargetSnapshots(
